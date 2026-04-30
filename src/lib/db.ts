@@ -9,7 +9,6 @@ import {
   setDoc,
   updateDoc,
   deleteField,
-  serverTimestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "../firebase";
@@ -75,7 +74,7 @@ export async function saveItem(item: Item): Promise<void> {
   if (isFirebaseConfigured && db) {
     await setDoc(doc(db, "items", item.id), {
       ...item,
-      updatedAt: serverTimestamp(),
+      updatedAt: Date.now(),
     });
     return;
   }
@@ -92,7 +91,7 @@ export async function deleteItem(id: string): Promise<void> {
   if (isFirebaseConfigured && db) {
     await setDoc(
       doc(db, "items", id),
-      { archived: true, updatedAt: serverTimestamp() },
+      { archived: true, updatedAt: Date.now() },
       { merge: true },
     );
     return;
@@ -174,7 +173,7 @@ export async function saveWeek(week: Week): Promise<void> {
   if (isFirebaseConfigured && db) {
     await setDoc(doc(db, "weeks", week.id), {
       ...updated,
-      updatedAt: serverTimestamp(),
+      updatedAt: Date.now(),
     });
     return;
   }
@@ -195,7 +194,7 @@ export async function setWeekEntryQuantity(
   if (isFirebaseConfigured && db) {
     await updateDoc(doc(db, "weeks", weekId), {
       [`entries.${itemId}.quantity`]: quantity,
-      updatedAt: serverTimestamp(),
+      updatedAt: Date.now(),
     });
     return;
   }
@@ -215,7 +214,7 @@ export async function addEntryToWeek(
   if (isFirebaseConfigured && db) {
     await updateDoc(doc(db, "weeks", weekId), {
       [`entries.${itemId}`]: entry,
-      updatedAt: serverTimestamp(),
+      updatedAt: Date.now(),
     });
     return;
   }
@@ -232,7 +231,7 @@ export async function removeEntryFromWeek(
   if (isFirebaseConfigured && db) {
     await updateDoc(doc(db, "weeks", weekId), {
       [`entries.${itemId}`]: deleteField(),
-      updatedAt: serverTimestamp(),
+      updatedAt: Date.now(),
     });
     return;
   }

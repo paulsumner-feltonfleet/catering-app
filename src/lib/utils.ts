@@ -4,9 +4,20 @@ export function cn(...inputs: ClassValue[]): string {
   return clsx(inputs);
 }
 
-export function formatDate(d: Date | number): string {
-  const date = typeof d === "number" ? new Date(d) : d;
-  return date.toLocaleDateString("en-GB", {
+/** Coerce a value (number, Date, or Firestore Timestamp-shaped object) to a Date. */
+function toDate(d: unknown): Date {
+  if (d instanceof Date) return d;
+  if (typeof d === "number") return new Date(d);
+  if (d && typeof d === "object") {
+    const o = d as { toMillis?: () => number; seconds?: number };
+    if (typeof o.toMillis === "function") return new Date(o.toMillis());
+    if (typeof o.seconds === "number") return new Date(o.seconds * 1000);
+  }
+  return new Date(0);
+}
+
+export function formatDate(d: unknown): string {
+  return toDate(d).toLocaleDateString("en-GB", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -14,9 +25,8 @@ export function formatDate(d: Date | number): string {
   });
 }
 
-export function formatDateShort(d: Date | number): string {
-  const date = typeof d === "number" ? new Date(d) : d;
-  return date.toLocaleDateString("en-GB", {
+export function formatDateShort(d: unknown): string {
+  return toDate(d).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
