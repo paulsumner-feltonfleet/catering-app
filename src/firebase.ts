@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,11 +15,23 @@ export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey && firebaseConfig.projectId,
 );
 
-export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
-export const auth = app ? getAuth(app) : null;
-// `ignoreUndefinedProperties` lets us pass `subcategory: undefined` etc.
-// straight into setDoc without first stripping fields by hand.
-export const db = app
-  ? initializeFirestore(app, { ignoreUndefinedProperties: true })
+export const app = isFirebaseConfigured
+  ? getApps().length === 0
+    ? initializeApp(firebaseConfig)
+    : getApp()
   : null;
+export const auth = app ? getAuth(app) : null;
+
+// `ignoreUndefinedProperties` lets us pass `subcategory: undefined` etc.
+// straight into setDoc without first stripping fields. Wrapped in try/catch
+// so HMR re-evaluation doesn't fail when Firestore is already initialised.
+function initDb() {
+  if (!app) return null;
+  try {
+    return initializeFirestore(app, { ignoreUndefinedProperties: true });
+  } catch {
+    return getFirestore(app);
+  }
+}
+export const db = initDb();
 export const googleProvider = new GoogleAuthProvider();
