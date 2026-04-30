@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  deleteDoc,
   getDoc,
   getDocs,
   onSnapshot,
@@ -184,6 +185,18 @@ export async function saveWeek(week: Week): Promise<void> {
     localStorage.setItem(WEEK_INDEX_KEY, JSON.stringify(idx));
   }
   window.dispatchEvent(new StorageEvent("storage", { key: WEEK_KEY(week.id) }));
+}
+
+export async function deleteWeek(id: string): Promise<void> {
+  if (isFirebaseConfigured && db) {
+    await deleteDoc(doc(db, "weeks", id));
+    return;
+  }
+  localStorage.removeItem(WEEK_KEY(id));
+  const idx = JSON.parse(localStorage.getItem(WEEK_INDEX_KEY) ?? "[]") as string[];
+  const next = idx.filter((x) => x !== id);
+  localStorage.setItem(WEEK_INDEX_KEY, JSON.stringify(next));
+  window.dispatchEvent(new StorageEvent("storage", { key: WEEK_KEY(id) }));
 }
 
 export async function setWeekEntryQuantity(
