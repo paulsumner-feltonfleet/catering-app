@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,5 +17,9 @@ export const isFirebaseConfigured = Boolean(
 
 export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
+// `ignoreUndefinedProperties` lets us pass `subcategory: undefined` etc.
+// straight into setDoc without first stripping fields by hand.
+export const db = app
+  ? initializeFirestore(app, { ignoreUndefinedProperties: true })
+  : null;
 export const googleProvider = new GoogleAuthProvider();

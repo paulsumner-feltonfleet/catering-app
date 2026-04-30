@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Copy, Download } from "lucide-react";
 import type { Week } from "../types";
 import { loadItems, loadWeek, saveWeek } from "../lib/db";
 import { formatGBP } from "../lib/money";
@@ -36,11 +36,25 @@ export function WeekView() {
 
   const onClone = async () => {
     if (!week || !user) return;
-    const items = await loadItems();
-    const targetId = weekEndingISO();
-    const cloned = cloneWeek(targetId, week, items, user.email);
-    await saveWeek(cloned);
-    navigate("/");
+    try {
+      const items = await loadItems();
+      const targetId = weekEndingISO();
+      const cloned = cloneWeek(targetId, week, items, user.email);
+      await saveWeek(cloned);
+      navigate("/");
+    } catch (err) {
+      setError(formatError(err));
+    }
+  };
+
+  const onExportExcel = async () => {
+    if (!week) return;
+    try {
+      const { exportWeekToXlsx } = await import("../lib/export");
+      exportWeekToXlsx(week);
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   if (loading) {
@@ -115,6 +129,13 @@ export function WeekView() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={onExportExcel}
+            title="Download this week as an Excel file"
+            className="focus-ring inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-brand-200 hover:bg-brand-50 transition"
+          >
+            <Download className="w-4 h-4" /> Export
+          </button>
           <button
             onClick={onClone}
             className="focus-ring inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-brand-200 hover:bg-brand-50 transition"

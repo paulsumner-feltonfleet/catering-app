@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  Download,
   Plus,
   Search,
   Sparkles,
@@ -117,34 +118,60 @@ export function ThisWeek() {
   const onCreateFresh = async () => {
     if (!user) return;
     const newWeek = buildNewWeek(weekId, items, user.email);
-    await saveWeek(newWeek);
-    setWeek(newWeek);
+    try {
+      await saveWeek(newWeek);
+      setWeek(newWeek);
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   const onCloneLast = async () => {
     if (!user) return;
-    const all = await loadAllWeeks();
-    const past = all.filter((w) => w.id !== weekId);
-    if (past.length === 0) return onCreateFresh();
-    const source = past[0]; // most recent
-    const newWeek = cloneWeek(weekId, source, items, user.email);
-    await saveWeek(newWeek);
-    setWeek(newWeek);
+    try {
+      const all = await loadAllWeeks();
+      const past = all.filter((w) => w.id !== weekId);
+      if (past.length === 0) return onCreateFresh();
+      const source = past[0];
+      const newWeek = cloneWeek(weekId, source, items, user.email);
+      await saveWeek(newWeek);
+      setWeek(newWeek);
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   const onAddNewItem = async (item: Item) => {
     if (!week) return;
     const entry: WeekEntry = itemToEntry(item, 0);
-    await addEntryToWeek(weekId, item.id, entry);
-    setWeek({ ...week, entries: { ...week.entries, [item.id]: entry } });
+    try {
+      await addEntryToWeek(weekId, item.id, entry);
+      setWeek({ ...week, entries: { ...week.entries, [item.id]: entry } });
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   const onRemoveFromWeek = async (itemId: string) => {
     if (!week) return;
-    await removeEntryFromWeek(weekId, itemId);
-    const next = { ...week.entries };
-    delete next[itemId];
-    setWeek({ ...week, entries: next });
+    try {
+      await removeEntryFromWeek(weekId, itemId);
+      const next = { ...week.entries };
+      delete next[itemId];
+      setWeek({ ...week, entries: next });
+    } catch (err) {
+      setError(formatError(err));
+    }
+  };
+
+  const onExportExcel = async () => {
+    if (!week) return;
+    try {
+      const { exportWeekToXlsx } = await import("../lib/export");
+      exportWeekToXlsx(week);
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   if (loading) {
@@ -272,6 +299,14 @@ export function ThisWeek() {
         </div>
         <div className="flex items-center gap-4">
           <SaveIndicator saving={savingCount > 0} />
+          <button
+            onClick={onExportExcel}
+            title="Download this week as an Excel file"
+            className="focus-ring inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 transition text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </button>
           <div className="text-right">
             <div className="text-xs text-brand-600 uppercase tracking-wide">
               Grand total
